@@ -37,8 +37,14 @@ public class GameController {
     }
 
     @GetMapping("/cenario")
-    public ResponseEntity<String> getCenario(HttpSession session) {
-        return ResponseEntity.ok(gameService.getProximoCliente(session).nomeBebida());
+    public ResponseEntity<CenarioDTO> getCenario(HttpSession session) {
+        Receita receita = gameService.getProximoCliente(session);
+        CenarioDTO cenario = new CenarioDTO();
+        cenario.setNomeBebida(receita.nomeBebida());
+        cenario.setIngredientesEsperados(
+                receita.ingredientesEsperados().stream().map(Enum::name).collect(Collectors.toList())
+        );
+        return ResponseEntity.ok(cenario);
     }
 
     @PostMapping("/processar-fala")
