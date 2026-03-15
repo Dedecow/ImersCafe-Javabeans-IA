@@ -55,7 +55,7 @@ public class GameController {
         // Valida com a IA se a fala do jogador faz sentido no cenário atual.
         // Não retornamos a avaliação diretamente; apenas garantimos que a IA foi consultada.
         try {
-            aiService.avaliarResposta(acao.getResposta());
+            aiService.avaliarResposta(acao.resposta());
         } catch (Exception e) {
             System.err.println("Erro ao validar fala do jogador: " + e.getMessage());
         }
