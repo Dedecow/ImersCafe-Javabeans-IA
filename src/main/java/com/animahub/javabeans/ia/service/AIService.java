@@ -6,12 +6,14 @@ import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.model.Ingrediente;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class AIService implements com.animahub.javabeans.ia.service.ai.AIService {
 
     private final WebClient webClient;
@@ -56,7 +58,7 @@ public class AIService implements com.animahub.javabeans.ia.service.ai.AIService
             return objectMapper.readValue(jsonLimpo, AvaliacaoDTO.class);
 
         } catch (Exception e) {
-            System.err.println("Erro ao validar JSON da IA: " + e.getMessage());
+            log.error("Erro ao validar JSON da IA: {}", e.getMessage(), e);
             return new AvaliacaoDTO(0, "Resposta inválida da IA. Tente novamente.", false, false);
         }
     }
@@ -159,7 +161,7 @@ public class AIService implements com.animahub.javabeans.ia.service.ai.AIService
             return new AnaliseIADTO(competencia, feedback);
 
         } catch (Exception e) {
-            System.err.println("Erro ao avaliar competência comunicativa: " + e.getMessage());
+            log.error("Erro ao avaliar competência comunicativa: {}", e.getMessage(), e);
             return new AnaliseIADTO(0.0, "Erro ao processar avaliação. Tente novamente.");
         }
     }

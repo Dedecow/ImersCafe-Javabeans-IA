@@ -49,7 +49,7 @@ public class Sessao {
      * Relacionamento N:1 obrigatório.
      */
     @ManyToOne(
-            fetch = FetchType.EAGER,
+            fetch = FetchType.LAZY,
             optional = false
     )
     @JoinColumn(

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -96,7 +97,7 @@ public class JogadorService {
      * @param pontos    Quantidade de XP a adicionar (deve ser >= 0)
      * @throws IllegalArgumentException se o jogador não for encontrado ou pontos < 0
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.REQUIRED)
     public void adicionarXP(UUID jogadorId, Integer pontos) {
         log.info("Adicionando {} XP ao jogador id={}", pontos, jogadorId);
 
