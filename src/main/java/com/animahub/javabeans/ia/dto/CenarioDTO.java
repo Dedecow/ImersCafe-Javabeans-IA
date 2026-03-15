@@ -1,12 +1,27 @@
 package com.animahub.javabeans.ia.dto;
 
+import com.animahub.javabeans.ia.model.enums.NivelDificuldade;
 import java.util.List;
 
+/**
+ * DTO para representação de cenários pedagógicos.
+ * Suporta tanto o contrato legado do /game quanto o novo contrato /api/v1/jogo/cenario.
+ */
 public class CenarioDTO {
+    // Campos legados (endpoint /game)
     private String id;
     private String titulo;
     private String descricaoContexto;
     private String objetivoSoftSkill;
+
+    // Campos do novo contrato de API /api/v1/jogo/cenario
+    private String cenarioId;
+    private String descricao;
+    private String contextoNarrativo;
+    private List<String> objetivosPedagogicos;
+    private NivelDificuldade dificuldade;
+    private int tempoEstimado;
+    private int xpRecompensa;
 
     // Novos campos para o fluxo de preparo de bebida
     private String nomeBebida;
@@ -40,4 +55,19 @@ public class CenarioDTO {
     public void setNomeBebida(String nomeBebida) { this.nomeBebida = nomeBebida; }
     public List<String> getIngredientesEsperados() { return ingredientesEsperados; }
     public void setIngredientesEsperados(List<String> ingredientesEsperados) { this.ingredientesEsperados = ingredientesEsperados; }
+
+    public String getCenarioId() { return cenarioId; }
+    public void setCenarioId(String cenarioId) { this.cenarioId = cenarioId; }
+    public String getDescricao() { return descricao; }
+    public void setDescricao(String descricao) { this.descricao = descricao; }
+    public String getContextoNarrativo() { return contextoNarrativo; }
+    public void setContextoNarrativo(String contextoNarrativo) { this.contextoNarrativo = contextoNarrativo; }
+    public List<String> getObjetivosPedagogicos() { return objetivosPedagogicos; }
+    public void setObjetivosPedagogicos(List<String> objetivosPedagogicos) { this.objetivosPedagogicos = objetivosPedagogicos; }
+    public NivelDificuldade getDificuldade() { return dificuldade; }
+    public void setDificuldade(NivelDificuldade dificuldade) { this.dificuldade = dificuldade; }
+    public int getTempoEstimado() { return tempoEstimado; }
+    public void setTempoEstimado(int tempoEstimado) { this.tempoEstimado = tempoEstimado; }
+    public int getXpRecompensa() { return xpRecompensa; }
+    public void setXpRecompensa(int xpRecompensa) { this.xpRecompensa = xpRecompensa; }
 }

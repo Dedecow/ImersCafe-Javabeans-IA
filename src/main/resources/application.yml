@@ -17,3 +17,12 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+logging:
+  level:
+    com.animahub.javabeans.ia: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
