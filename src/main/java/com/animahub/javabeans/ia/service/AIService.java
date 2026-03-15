@@ -1,6 +1,7 @@
 package com.animahub.javabeans.ia.service;
 
 import com.animahub.javabeans.ia.config.DeepseekConfig;
+import com.animahub.javabeans.ia.dto.AnaliseIADTO;
 import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.model.Ingrediente;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class AIService {
+public class AIService implements com.animahub.javabeans.ia.service.ai.AIService {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -100,6 +101,66 @@ public class AIService {
 
         } catch (Exception e) {
             return "Desculpe, erro ao processar a resposta da IA: " + e.getMessage();
+        }
+    }
+
+    /**
+     * Avalia a competência comunicativa do jogador de forma agnóstica às regras de negócio.
+     *
+     * Conformidade: Qin et al. (2025) - Competência comunicativa avaliada pela IA
+     *
+     * @param respostaJogador Texto da resposta fornecida pelo jogador
+     * @param cenarioAtual    Identificador ou descrição do cenário atual
+     * @param contexto        Contexto adicional necessário para avaliação
+     * @return AnaliseIADTO com competência comunicativa (0-100) e feedback educativo
+     */
+    @Override
+    public AnaliseIADTO avaliarCompetenciaComunicativa(String respostaJogador, String cenarioAtual, String contexto) {
+        String prompt = String.format("""
+                Você é um avaliador de competência comunicativa em um simulador educacional.
+                Cenário atual: %s
+                Contexto: %s
+                Resposta do jogador: %s
+
+                RESPONDA APENAS COM UM JSON VÁLIDO NO FORMATO:
+                {"competenciaComunicativa":<numero_de_0_a_100>, "feedback":"<texto_educativo>"}
+                """, cenarioAtual, contexto, respostaJogador);
+
+        Map<String, Object> body = Map.of(
+                "model", "deepseek-chat",
+                "messages", List.of(
+                        Map.of("role", "system", "content",
+                                "Você é um avaliador de competência comunicativa. RESPONDA APENAS COM JSON VÁLIDO."),
+                        Map.of("role", "user", "content", prompt)
+                ),
+                "response_format", Map.of("type", "json_object")
+        );
+
+        try {
+            String rawResponse = webClient.post()
+                    .uri("/chat/completions")
+                    .bodyValue(body)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            JsonNode root = objectMapper.readTree(rawResponse);
+            String conteudoIA = root.path("choices").get(0).path("message").path("content").asText();
+
+            String jsonLimpo = conteudoIA
+                    .replace("```json", "")
+                    .replace("```", "")
+                    .trim();
+
+            JsonNode resultado = objectMapper.readTree(jsonLimpo);
+            double competencia = resultado.path("competenciaComunicativa").asDouble(0.0);
+            String feedback = resultado.path("feedback").asText("Sem feedback disponível.");
+
+            return new AnaliseIADTO(competencia, feedback);
+
+        } catch (Exception e) {
+            System.err.println("Erro ao avaliar competência comunicativa: " + e.getMessage());
+            return new AnaliseIADTO(0.0, "Erro ao processar avaliação. Tente novamente.");
         }
     }
 }
