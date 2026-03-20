@@ -1,13 +1,13 @@
 deepseek:
   endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com/v1}
-  key: ${DEEPSEEK_API_KEY:}
+  key: ${DEEPSEEK_API_KEY:sk-683198825b9c4ed39602a0d273232f09}
 
 spring:
   datasource:
     url: jdbc:h2:mem:javabeansdb
     driverClassName: org.h2.Driver
     username: sa
-    password: 
+    password:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:

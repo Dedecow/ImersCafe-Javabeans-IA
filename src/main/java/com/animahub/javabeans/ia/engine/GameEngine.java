@@ -5,7 +5,12 @@ import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.service.AIService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.stereotype.Service;
+import java.util.Random;
+
+import java.math.MathContext;
+import java.util.Random;
 
 @Service
 public class GameEngine {
@@ -34,8 +39,11 @@ public class GameEngine {
         if (!sessionEngine.isSessaoValida(sessionId)) {
             throw new IllegalArgumentException("Sessão inválida ou expirada.");
         }
-        
+
         try {
+            TipoCliente cliente = sortearTipoCliente();
+            int pontos = cliente.getPontos();
+
             // 1. Chama a IA repassando a resposta do aluno
             String respostaRawIA = aiService.avaliarResposta(respostaAluno);
 
@@ -44,12 +52,30 @@ public class GameEngine {
             String conteudoIA = rootNode.path("choices").get(0).path("message").path("content").asText();
 
             // 3. Converte o texto JSON gerado pela IA para o nosso AvaliacaoDTO
-            return objectMapper.readValue(conteudoIA, AvaliacaoDTO.class);
+            AvaliacaoDTO avaliacao = objectMapper.readValue(conteudoIA, AvaliacaoDTO.class);
+
+            avaliacao.setTipoCliente(cliente);
+
+            if (avaliacao.isCenarioConcluido()){
+                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontos);
+            } else {
+                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontos / 2);
+            }
+            return avaliacao;
 
         } catch (Exception e) {
             System.err.println("Erro ao processar a IA: " + e.getMessage());
             // Fallback seguro para o jogo não quebrar caso a IA falhe ou a chave esteja errada
             return new AvaliacaoDTO(0, "Erro de comunicação com a IA. Tente novamente.", false, false);
         }
+
     }
+         public TipoCliente sortearTipoCliente() {
+             TipoCliente[] valores = TipoCliente.values();
+
+             Random random = new Random();
+             int indice = random.nextInt(valores.length);
+             return valores[indice];
+
+         }
 }

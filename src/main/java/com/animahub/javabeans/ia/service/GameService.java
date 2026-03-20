@@ -1,6 +1,8 @@
 package com.animahub.javabeans.ia.service;
 
+import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.dto.ResultadoPreparar;
+import com.animahub.javabeans.ia.engine.GameEngine;
 import com.animahub.javabeans.ia.model.Ingrediente;
 import com.animahub.javabeans.ia.model.Receita;
 import jakarta.servlet.http.HttpSession;
@@ -13,10 +15,26 @@ public class GameService {
 
     private final AIService aiService;
     private final Map<Integer, Receita> cenarios = new HashMap<>();
+    private final GameEngine gameEngine;
 
-    public GameService(AIService aiService) {
+    public GameService(AIService aiService, GameEngine gameEngine) {
         this.aiService = aiService;
+        this.gameEngine = gameEngine;
         carregarReceitasIniciais();
+    }
+    public AvaliacaoDTO processarResposta(HttpSession session, String respostaAluno) {
+        String sessionId = session.getId();
+
+        AvaliacaoDTO avaliacao = gameEngine.processarTurno(sessionId, respostaAluno);
+
+        Integer pontuacaoAtual = (Integer) session.getAttribute("pontuacaoTotal");
+        if (pontuacaoAtual == null) pontuacaoAtual = 0;
+
+        pontuacaoAtual += avaliacao.getXpGanho();
+
+        session.setAttribute("pontuacaoTotal", pontuacaoAtual);
+
+        return avaliacao;
     }
 
     private void carregarReceitasIniciais() {

@@ -1,10 +1,21 @@
 package com.animahub.javabeans.ia.dto;
 
+import com.animahub.javabeans.ia.engine.TipoCliente;
+
 public class AvaliacaoDTO {
     private int xpGanho;
     private String feedbackEducativo;
     private boolean personaQuebrada;
     private boolean cenarioConcluido;
+    private TipoCliente tipoCliente;
+
+    public TipoCliente getTipoCliente() {
+        return tipoCliente;
+    }
+
+    public void setTipoCliente(TipoCliente tipoCliente) {
+        this.tipoCliente = tipoCliente;
+    }
 
     public AvaliacaoDTO() {}
 

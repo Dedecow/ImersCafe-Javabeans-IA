@@ -1,5 +1,6 @@
 package com.animahub.javabeans.ia.controller;
 
+import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.dto.DiagnosticoDTO;
 import com.animahub.javabeans.ia.dto.PrepararCafeRequest;
 import com.animahub.javabeans.ia.dto.ResultadoPreparar;
@@ -52,5 +53,13 @@ public class GameController {
         map.put("cenarioAtual", session.getAttribute("cenarioAtual"));
         map.put("pontuacaoTotal", session.getAttribute("pontuacaoTotal"));
         return ResponseEntity.ok(map);
+    }
+    @PostMapping("/responder")
+    public ResponseEntity<AvaliacaoDTO> responder(
+            @RequestBody String respostaAluno,
+            HttpSession session) {
+
+        AvaliacaoDTO avaliacao = gameService.processarResposta(session, respostaAluno);
+        return ResponseEntity.ok(avaliacao);
     }
 }
