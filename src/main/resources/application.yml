@@ -1,6 +1,6 @@
 deepseek:
   endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com/v1}
-  key: ${DEEPSEEK_API_KEY:sk-683198825b9c4ed39602a0d273232f09}
+  key: ${}
 
 spring:
   datasource:
