@@ -54,7 +54,7 @@ public class GameEngine {
             // 3. Converte o texto JSON gerado pela IA para o nosso AvaliacaoDTO
             AvaliacaoDTO avaliacao = objectMapper.readValue(conteudoIA, AvaliacaoDTO.class);
 
-            avaliacao.setTipoCliente(cliente)
+            avaliacao.setTipoCliente(cliente);
 
             if (avaliacao.isCenarioConcluido()){
                 avaliacao.setXpGanho(avaliacao.getXpGanho() + pontos);
