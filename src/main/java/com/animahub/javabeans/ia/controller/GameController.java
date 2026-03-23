@@ -54,6 +54,7 @@ public class GameController {
         map.put("pontuacaoTotal", session.getAttribute("pontuacaoTotal"));
         return ResponseEntity.ok(map);
     }
+
     @PostMapping("/responder")
     public ResponseEntity<AvaliacaoDTO> responder(
             @RequestBody String respostaAluno,
