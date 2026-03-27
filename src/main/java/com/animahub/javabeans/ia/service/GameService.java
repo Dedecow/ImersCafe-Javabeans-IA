@@ -8,7 +8,12 @@ import com.animahub.javabeans.ia.model.Receita;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class GameService {
@@ -22,19 +27,38 @@ public class GameService {
         this.gameEngine = gameEngine;
         carregarReceitasIniciais();
     }
-    public AvaliacaoDTO processarResposta(HttpSession session, String respostaAluno) {
-        String sessionId = session.getId();
 
-        AvaliacaoDTO avaliacao = gameEngine.processarTurno(sessionId, respostaAluno);
+    public AvaliacaoDTO processarResposta(HttpSession session, String respostaAluno) {
+        extrairEPersistirNomeUsuario(respostaAluno, session);
+
+        String sessionId = session.getId();
+        String nomeJogador = (String) session.getAttribute("nomeJogador");
+
+        AvaliacaoDTO avaliacao = gameEngine.processarTurno(sessionId, respostaAluno, nomeJogador);
 
         Integer pontuacaoAtual = (Integer) session.getAttribute("pontuacaoTotal");
-        if (pontuacaoAtual == null) pontuacaoAtual = 0;
+        if (pontuacaoAtual == null) {
+            pontuacaoAtual = 0;
+        }
 
         pontuacaoAtual += avaliacao.getXpGanho();
-
         session.setAttribute("pontuacaoTotal", pontuacaoAtual);
 
         return avaliacao;
+    }
+
+    private void extrairEPersistirNomeUsuario(String textoUsuario, HttpSession session) {
+        if (session.getAttribute("nomeJogador") == null && textoUsuario != null) {
+            Pattern pattern = Pattern.compile(
+                    "(?i)(?:meu nome é|meu nome e|eu sou o|eu sou a|chamo-me|me chamo|pode me chamar de|chame-me de|chame de)\\s+([A-ZÁ-ÚÀ-Õ][a-zá-úà-õ]+)"
+            );
+            Matcher matcher = pattern.matcher(textoUsuario.trim());
+
+            if (matcher.find()) {
+                String nomeExtraido = matcher.group(1);
+                session.setAttribute("nomeJogador", nomeExtraido);
+            }
+        }
     }
 
     private void carregarReceitasIniciais() {
@@ -83,23 +107,24 @@ public class GameService {
             escolhidos = Collections.emptyList();
         }
 
-        // CORRIGIDO: Agora a ordem em que o aluno clica não importa
-        boolean acertou = escolhidos.containsAll(receitaEsperada.ingredientesEsperados()) && 
-                          receitaEsperada.ingredientesEsperados().containsAll(escolhidos);
+        boolean acertou = escolhidos.containsAll(receitaEsperada.ingredientesEsperados())
+                && receitaEsperada.ingredientesEsperados().containsAll(escolhidos);
 
         int pontos = acertou ? receitaEsperada.pontosBase() : 0;
         pontuacaoTotal += pontos;
 
+        String nomeJogador = (String) session.getAttribute("nomeJogador");
+
         String feedbackIA = aiService.gerarFeedbackBarista(
                 receitaEsperada.nomeBebida(),
                 escolhidos,
-                receitaEsperada.ingredientesEsperados(),
-                acertou
+                nomeJogador
         );
 
-        // CORRIGIDO: Avanço linear (1, 2, 3, 4, 1...)
         Integer cenarioAtual = (Integer) session.getAttribute("cenarioAtual");
-        if (cenarioAtual == null) cenarioAtual = 1;
+        if (cenarioAtual == null) {
+            cenarioAtual = 1;
+        }
         int proximoCenario = (cenarioAtual % cenarios.size()) + 1;
 
         atualizarEstado(session, proximoCenario, pontuacaoTotal);
