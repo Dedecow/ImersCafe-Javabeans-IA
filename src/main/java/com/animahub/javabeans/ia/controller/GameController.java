@@ -6,6 +6,7 @@ import com.animahub.javabeans.ia.dto.PrepararCafeRequest;
 import com.animahub.javabeans.ia.dto.ResultadoPreparar;
 import com.animahub.javabeans.ia.service.AIService;
 import com.animahub.javabeans.ia.service.GameService;
+import com.animahub.javabeans.ia.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,22 @@ public class GameController {
 
     private final GameService gameService;
     private final AIService aiService;
+    private final SessionService sessionService; // Adicionado para suportar a persistência na base de dados
 
-    public GameController(GameService gameService, AIService aiService) {
+    public GameController(GameService gameService, AIService aiService, SessionService sessionService) {
         this.gameService = gameService;
         this.aiService = aiService;
+        this.sessionService = sessionService;
+    }
+
+    // O método foi movido para dentro do escopo da classe
+    @PostMapping("/iniciar")
+    public ResponseEntity<Void> iniciarSessao(@RequestBody Map<String, String> payload, HttpSession session) {
+        String nomeBarista = payload.get("nomeBarista");
+        if (nomeBarista != null && !nomeBarista.trim().isEmpty()) {
+            session.setAttribute("nomeJogador", nomeBarista.trim());
+        }
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/health")
@@ -40,9 +53,13 @@ public class GameController {
 
     @PostMapping("/preparar-cafe")
     public ResponseEntity<ResultadoPreparar> prepararCafe(
-            @RequestBody PrepararCafeRequest request,
-            HttpSession session) {
-        ResultadoPreparar resultado = gameService.prepararCafe(session, request.ingredientesEscolhidos());
+            HttpSession session,
+            @RequestBody PrepararCafeRequest request) {
+        ResultadoPreparar resultado = gameService.prepararCafe(
+                session,
+                request.ingredientesEscolhidos(),
+                request.falaBarista()
+        );
         return ResponseEntity.ok(resultado);
     }
 

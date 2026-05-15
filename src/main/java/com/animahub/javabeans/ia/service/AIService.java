@@ -41,20 +41,20 @@ public class AIService {
         return chamarDeepseek(body);
     }
 
-    public String gerarFeedbackBarista(String bebida, List<Ingrediente> escolhido, String nomeJogador) {
-        String promptUsuario = promptFactory.createFeedbackBarista(bebida, escolhido, nomeJogador);
+        public String gerarFeedbackBarista(String bebida, List<Ingrediente> escolhido, String nomeJogador, String falaBarista) {
+        String promptUsuario = promptFactory.createFeedbackBarista(bebida, escolhido, nomeJogador, falaBarista);
 
         Map<String, Object> body = Map.of(
-                "model", "deepseek-chat",
-                "messages", List.of(
-                        Map.of("role", "system", "content", "Você é um cliente reagindo ao pedido."),
-                        Map.of("role", "user", "content", promptUsuario)
-                )
+            "model", "deepseek-chat",
+            "messages", List.of(
+                Map.of("role", "system", "content", "Você é um cliente reagindo ao atendimento e ao pedido."),
+                Map.of("role", "user", "content", promptUsuario)
+            )
         );
 
         String rawResponse = chamarDeepseek(body);
         return extrairConteudo(rawResponse);
-    }
+        }
 
     private String chamarDeepseek(Map<String, Object> body) {
         return webClient.post()

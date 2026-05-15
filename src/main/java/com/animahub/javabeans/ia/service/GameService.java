@@ -92,7 +92,7 @@ public class GameService {
         return getCenarioAtual(session);
     }
 
-    public ResultadoPreparar prepararCafe(HttpSession session, List<String> ingredientesEscolhidosStr) {
+    public ResultadoPreparar prepararCafe(HttpSession session, List<String> ingredientesEscolhidosStr, String falaBarista) {
         Receita receitaEsperada = getCenarioAtual(session);
         int pontuacaoTotal = getPontuacaoTotal(session);
 
@@ -115,10 +115,12 @@ public class GameService {
 
         String nomeJogador = (String) session.getAttribute("nomeJogador");
 
+        // Repassamos a fala do barista para o motor da IA
         String feedbackIA = aiService.gerarFeedbackBarista(
                 receitaEsperada.nomeBebida(),
                 escolhidos,
-                nomeJogador
+                nomeJogador,
+                falaBarista
         );
 
         Integer cenarioAtual = (Integer) session.getAttribute("cenarioAtual");

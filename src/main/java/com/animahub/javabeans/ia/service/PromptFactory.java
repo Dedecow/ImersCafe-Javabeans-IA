@@ -46,7 +46,7 @@ public class PromptFactory {
                 """.formatted(instrucaoNome);
     }
 
-    public String createFeedbackBarista(String bebidaPedida, List<Ingrediente> entregue, String nomeJogador) {
+public String createFeedbackBarista(String bebidaPedida, List<Ingrediente> entregue, String nomeJogador, String falaBarista) {
         String ingredientesEntregues = entregue.stream()
                 .map(Ingrediente::getNome)
                 .collect(Collectors.joining(", "));
@@ -55,27 +55,26 @@ public class PromptFactory {
                 ? "O cliente sabe que o barista se chama \"" + nomeJogador + "\". Se for natural, mencione esse nome na resposta."
                 : "Se você não souber o nome do barista, não invente um nome.";
 
-        return String.format("""
-                Você é um cliente em uma cafeteria.
+                return String.format("""
+                        Você é um cliente em uma cafeteria avaliando o atendimento que acabou de receber.
 
-                Pedido feito: %s
-                Ingredientes que o barista entregou: %s
+                        Pedido feito: %s
+                        Ingredientes que o barista entregou: %s
+                        O que o barista te disse antes de entregar: "%s"
 
-                Reaja como um cliente real, de forma curta e natural.
-                Baseie sua resposta apenas na compatibilidade entre o pedido e os ingredientes entregues.
-                Se parecer adequado, demonstre satisfação.
-                Se parecer incompleto, estranho ou incompatível, demonstre frustração com educação.
-                Você pode comentar também, de forma breve, sobre a postura e a simpatia do barista.
+                        Reaja como um cliente real, de forma curta e natural.
+                        Sua reação deve focar PRIMARIAMENTE na postura, empatia e na comunicação do barista (soft skills). 
+                        Se a fala do barista foi acolhedora e profissional, demonstre satisfação com o atendimento, mesmo que a bebida tenha algum erro de ingrediente.
+                        Se a fala foi rude, seca ou inadequada, demonstre desconforto ou frustração com a postura, independentemente de a bebida estar correta.
+                        Comente sobre a qualidade ou os erros da bebida apenas de forma secundária.
+                
+                        %s
 
-                %s
-
-                Não invente detalhes que você não consegue observar.
-                Não fale de sistema, pontuação, regra ou avaliação técnica.
-                Não diga explicitamente "acertou" ou "errou".
-                Responda em 2 a 4 frases.
-                """,
-                bebidaPedida,
-                ingredientesEntregues.isEmpty() ? "nada (copo vazio)" : ingredientesEntregues,
-                instrucaoNome);
+                        Não invente detalhes não informados. Não fale de sistema, regras ou pontuação. Responda em 2 a 4 frases.
+                        """,
+                        bebidaPedida,
+                        ingredientesEntregues.isEmpty() ? "copo vazio" : ingredientesEntregues,
+                        falaBarista != null && !falaBarista.isBlank() ? falaBarista : "O barista entregou a bebida em silêncio, sem interagir.",
+                        instrucaoNome);
+            }
     }
-}
