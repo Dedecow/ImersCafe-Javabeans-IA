@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 public class DeepseekConfig {
 
     // Insira sua chave manualmente entre as aspas abaixo
-    private final String apiKey = "sk-0e03572130ff4bd6bd83286b4fe82702";
+    private final String apiKey = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
     private final String endpoint = "https://api.deepseek.com";
 
     public String getApiKey() {
