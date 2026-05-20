@@ -84,3 +84,6 @@ config.ps1
 
 ### Meus Arquivos Temporarios ###
 cookies.txt
+
+### Exclusoes Especificas de Codigo Fonte ###
+**/DeepseekConfig.java
