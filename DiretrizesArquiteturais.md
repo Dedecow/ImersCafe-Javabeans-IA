@@ -13,7 +13,6 @@ Este arquivo estabelece a política arquitetural oficial do sistema e possui pre
 O backend Spring Boot constitui a única fonte de verdade autoritativa para todo o domínio determinístico da aplicação.
 
 Isso inclui, de forma explícita e indelegável:
-
 - controle de estado de sessão;
 - progressão do fluxo do jogo;
 - definição do pedido atual do cliente;
@@ -29,11 +28,10 @@ Nenhum componente do frontend, modelo de linguagem ou mecanismo probabilístico 
 
 ## 2. Separação Estrita de Responsabilidades (Separation of Concerns)
 
-A arquitetura do projeto deve preservar separação estrita entre três camadas de responsabilidade:
+A arquitetura do projeto deve preservar a separação estrita entre três camadas lógicas de responsabilidade, independentemente de onde estejam hospedadas fisicamente na arquitetura atual:
 
 ### 2.1. Frontend (React)
 Responsável exclusivamente por:
-
 - coleta de entrada do usuário;
 - renderização da interface;
 - transição visual entre estados da aplicação;
@@ -44,16 +42,14 @@ O frontend não pode assumir papel de autoridade sobre regras do jogo, cálculo 
 
 ### 2.2. Backend Determinístico (Spring Boot)
 Responsável exclusivamente por:
-
 - execução das regras formais do jogo;
 - validação de hard skills;
 - gestão do estado oficial da rodada;
 - consolidação dos dados recebidos do cliente;
 - orquestração entre serviços determinísticos e serviços auxiliares de linguagem.
 
-### 2.3. Módulo de IA Generativa
+### 2.3. Módulo de IA Generativa (Integração)
 Responsável exclusivamente por:
-
 - análise textual da fala do aluno;
 - avaliação de comunicação, cordialidade, empatia e clareza;
 - geração de comentários narrativos sobre soft skills.
@@ -67,7 +63,6 @@ A IA generativa não possui autoridade sobre estado, pontuação, acerto de rece
 É terminantemente vedada a adoção do antipadrão arquitetural no qual a Inteligência Artificial generativa é utilizada como mecanismo de decisão para regras formais do sistema.
 
 Configura violação arquitetural qualquer proposta que atribua à IA a responsabilidade de:
-
 - determinar se a bebida está correta;
 - inferir se os ingredientes escolhidos correspondem à receita;
 - calcular pontos;
@@ -84,7 +79,6 @@ A IA não detém acesso privilegiado ao estado autoritativo do sistema. Logo, qu
 A IA generativa atua estritamente como módulo auxiliar de Processamento de Linguagem Natural.
 
 Seu escopo admissível restringe-se à avaliação de competências comportamentais do usuário, tais como:
-
 - cordialidade;
 - clareza discursiva;
 - adequação comunicacional;
@@ -93,14 +87,12 @@ Seu escopo admissível restringe-se à avaliação de competências comportament
 - coerência narrativa da interação com o cliente.
 
 A IA somente pode operar sobre variáveis textuais explicitamente fornecidas, como:
-
 - `respostaAluno`
 - `nomeBarista`
 
 A IA não deve receber a incumbência de validar hard skills nem de inferir regras de jogo a partir de linguagem natural.
 
 Em formulação sintética:
-
 > A IA é componente auxiliar de interpretação linguística, nunca autoridade de domínio.
 
 ---
@@ -111,7 +103,6 @@ Para evitar ambiguidade conceitual, o sistema deve ser tratado como composto por
 
 ### 5.1. Domínio Determinístico (Hard Skill)
 Inclui:
-
 - receita esperada;
 - ingredientes selecionados;
 - comparação entre vetores;
@@ -123,15 +114,14 @@ Esse domínio pertence integralmente ao backend.
 
 ### 5.2. Domínio Interpretativo (Soft Skill)
 Inclui:
-
 - fala do usuário;
 - tom da interação;
 - qualidade comunicacional;
 - adequação do atendimento.
 
-Esse domínio pode ser processado pela IA, desde que o backend permaneça como orquestrador e mantenha o controle do resultado consolidado.
+Esse domínio pode ser processado pela IA, desde que o backend permaneça como orquestrador e mantenha o controle do resultado consolidado. Nenhuma solução arquitetural válida pode fundir esses dois domínios em uma única autoridade probabilística.
 
-Nenhuma solução arquitetural válida pode fundir esses dois domínios em uma única autoridade probabilística.
+**Nota Arquitetural:** A separação entre domínio determinístico e domínio interpretativo é obrigatória no plano lógico da arquitetura, independentemente de ambos residirem temporariamente no mesmo backend monolítico durante a V1.
 
 ---
 
@@ -140,12 +130,10 @@ Nenhuma solução arquitetural válida pode fundir esses dois domínios em uma �
 Toda alteração em endpoints, DTOs, contratos JSON ou chamadas `fetch` deve preservar a bifurcação semântica entre dados determinísticos e dados textuais.
 
 O payload ideal deve transportar simultaneamente:
-
 - vetores determinísticos do preparo;
 - variáveis textuais da interação.
 
 Exemplo de contrato admissível:
-
 ```json
 {
   "ingredientesEscolhidos": ["CAFE", "LEITE", "ESPUMA"],
