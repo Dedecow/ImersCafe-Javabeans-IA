@@ -92,7 +92,10 @@ public class AIService {
             JsonNode choices = root.path("choices");
 
             if (choices.isArray() && !choices.isEmpty()) {
-                return choices.get(0).path("message").path("content").asText();
+                JsonNode content = choices.get(0).path("message").path("content");
+                if (content.isTextual() && !content.textValue().isBlank()) {
+                    return content.textValue();
+                }
             }
 
             return FEEDBACK_INDISPONIVEL;
