@@ -6,12 +6,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientException;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class AIService {
+
+    private static final String FEEDBACK_INDISPONIVEL =
+            "Feedback da IA indisponível no momento.";
 
     private final WebClient webClient;
     private final PromptFactory promptFactory;
@@ -52,7 +56,12 @@ public class AIService {
             )
         );
 
-        String rawResponse = chamarDeepseek(body);
+        String rawResponse;
+        try {
+            rawResponse = chamarDeepseek(body);
+        } catch (WebClientException e) {
+            return FEEDBACK_INDISPONIVEL;
+        }
         return extrairConteudo(rawResponse);
         }
 
@@ -74,9 +83,9 @@ public class AIService {
                 return choices.get(0).path("message").path("content").asText();
             }
 
-            return "Desculpe, a IA não retornou conteúdo válido.";
+            return FEEDBACK_INDISPONIVEL;
         } catch (Exception e) {
-            return "Desculpe, erro ao processar a resposta da IA: " + e.getMessage();
+            return FEEDBACK_INDISPONIVEL;
         }
     }
 }
