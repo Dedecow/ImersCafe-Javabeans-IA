@@ -1,6 +1,7 @@
 deepseek:
   endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com}
   key: ${DEEPSEEK_API_KEY}
+  timeout: ${DEEPSEEK_TIMEOUT:15s}
 
 spring:
   datasource:

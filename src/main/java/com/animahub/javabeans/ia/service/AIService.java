@@ -8,8 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientException;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class AIService {
@@ -18,6 +20,7 @@ public class AIService {
             "Feedback da IA indisponível no momento.";
 
     private final WebClient webClient;
+    private final Duration timeout;
     private final PromptFactory promptFactory;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -28,6 +31,7 @@ public class AIService {
                 .defaultHeader("Content-Type", "application/json")
                 .build();
         this.promptFactory = promptFactory;
+        this.timeout = config.getTimeout();
     }
 
     public String avaliarResposta(String promptJogador, String nomeJogador) {
@@ -59,7 +63,7 @@ public class AIService {
         String rawResponse;
         try {
             rawResponse = chamarDeepseek(body);
-        } catch (WebClientException e) {
+        } catch (WebClientException | DeepseekTimeoutException e) {
             return FEEDBACK_INDISPONIVEL;
         }
         return extrairConteudo(rawResponse);
@@ -71,7 +75,15 @@ public class AIService {
                 .bodyValue(body)
                 .retrieve()
                 .bodyToMono(String.class)
+                .timeout(timeout)
+                .onErrorMap(TimeoutException.class, DeepseekTimeoutException::new)
                 .block();
+    }
+
+    private static final class DeepseekTimeoutException extends RuntimeException {
+        private DeepseekTimeoutException(TimeoutException cause) {
+            super("Tempo limite da chamada à DeepSeek excedido.", cause);
+        }
     }
 
     private String extrairConteudo(String rawResponse) {
