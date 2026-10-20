@@ -86,6 +86,12 @@ class PromptFactoryTest {
         assertThat(promptCliente()).contains(
                 "Não afirme sabor, temperatura, textura ou qualidade física da bebida.",
                 "Não avalie nem afirme correção ou erro da receita.",
+                "O nome da bebida e os ingredientes servem apenas como contexto do pedido; não autorizam concluir se o preparo está correto.",
+                "Nunca use os ingredientes recebidos para concluir, confirmar ou negar que a bebida está correta, está errada, corresponde ao pedido, não corresponde ao pedido ou foi preparada corretamente.",
+                "Mesmo que a comparação entre ingredientes e pedido pareça óbvia, não faça essa inferência.",
+                "A validação da receita pertence exclusivamente ao backend; não reproduza nem antecipe essa validação na sua resposta.",
+                "Não use formulações como \"está tudo certo com o pedido\", \"está conforme o pedido\", \"a receita está correta\", \"a receita está errada\" ou \"não corresponde ao pedido\", nem expressões equivalentes.",
+                "Mantenha o foco da resposta na comunicação e no atendimento do barista, sem emitir um veredito sobre a bebida.",
                 "Você não recebe o resultado determinístico oficial do preparo."
         );
     }
