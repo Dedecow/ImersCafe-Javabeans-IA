@@ -86,9 +86,9 @@ class PromptFactoryTest {
         assertThat(promptCliente()).contains(
                 "Não afirme sabor, temperatura, textura ou qualidade física da bebida.",
                 "Não avalie nem afirme correção ou erro da receita.",
-                "O nome da bebida e os ingredientes servem apenas como contexto do pedido; não autorizam concluir se o preparo está correto.",
-                "Nunca use os ingredientes recebidos para concluir, confirmar ou negar que a bebida está correta, está errada, corresponde ao pedido, não corresponde ao pedido ou foi preparada corretamente.",
-                "Mesmo que a comparação entre ingredientes e pedido pareça óbvia, não faça essa inferência.",
+                "O nome da bebida serve apenas como contexto do pedido; não autoriza concluir se o preparo está correto.",
+                "Nunca conclua, confirme ou negue que a bebida está correta, está errada, corresponde ao pedido, não corresponde ao pedido ou foi preparada corretamente.",
+                "Mesmo que uma conclusão sobre o preparo pareça óbvia, não faça essa inferência.",
                 "A validação da receita pertence exclusivamente ao backend; não reproduza nem antecipe essa validação na sua resposta.",
                 "Não use formulações como \"está tudo certo com o pedido\", \"está conforme o pedido\", \"a receita está correta\", \"a receita está errada\" ou \"não corresponde ao pedido\", nem expressões equivalentes.",
                 "Mantenha o foco da resposta na comunicação e no atendimento do barista, sem emitir um veredito sobre a bebida.",
@@ -112,13 +112,12 @@ class PromptFactoryTest {
         assertThat(promptCliente()).contains(
                 "O cliente sabe que o barista se chama \"Ana\".",
                 "Pedido feito: Cappuccino",
-                "Ingredientes que o barista entregou: Café, Leite, Espuma de Leite",
-                "O que o barista te disse antes de entregar: \"Aqui está seu café.\""
+                "Fala do barista informada: \"Aqui está seu café.\""
         );
     }
 
     @Test
-    void trataNomeAusenteCopoVazioEFalaAusente() {
+    void trataNomeAusenteEFalaAusenteSemInventarComportamento() {
         for (String ausente : new String[]{null, "", "   "}) {
             assertThat(factory.getSystemPromptAvaliacaoSoftSkills(ausente)).contains(
                     "Se o participante disser explicitamente o próprio nome",
@@ -127,9 +126,28 @@ class PromptFactoryTest {
             assertThat(factory.createFeedbackBarista("Cappuccino", List.of(), ausente, ausente))
                     .contains(
                             "Se você não souber o nome do barista, não invente um nome.",
-                            "Ingredientes que o barista entregou: copo vazio",
-                            "O barista entregou a bebida em silêncio, sem interagir."
-                    ).doesNotContain("O cliente sabe que o barista se chama");
+                            "Fala do barista informada: \"[FALA NÃO INFORMADA]\"",
+                            "O marcador [FALA NÃO INFORMADA] significa apenas ausência de dados sobre a fala.",
+                            "Na ausência de fala informada, não infira silêncio, falta de interação, gesto, tom, intenção, emoção ou comportamento.",
+                            "Quando faltar evidência, mantenha uma reação neutra, sem avaliar um atendimento que não foi descrito."
+                    ).doesNotContain("O cliente sabe que o barista se chama",
+                            "copo vazio", "entrega em silêncio",
+                            "O barista entregou a bebida em silêncio, sem interagir.");
+        }
+    }
+
+    @Test
+    void ingredientesDiferentesNaoAlteramPrompt() {
+        String esperado = promptCliente();
+        for (List<Ingrediente> ingredientes : List.of(
+                List.of(Ingrediente.CAFE),
+                List.of(Ingrediente.CHOCOLATE, Ingrediente.CARAMELO),
+                List.<Ingrediente>of())) {
+            String prompt = factory.createFeedbackBarista(
+                    "Cappuccino", ingredientes, "Ana", "Aqui está seu café.");
+            assertThat(prompt).isEqualTo(esperado);
+            assertThat(prompt).doesNotContain("Ingredientes que o barista entregou:",
+                    "copo vazio", "Café, Leite, Espuma de Leite", "Chocolate", "Caramelo");
         }
     }
 
