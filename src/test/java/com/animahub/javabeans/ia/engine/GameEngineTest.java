@@ -1,7 +1,9 @@
+
 package com.animahub.javabeans.ia.engine;
 
 import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.service.AIService;
+import com.animahub.javabeans.ia.service.AvaliacaoIAParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +33,18 @@ class GameEngineTest {
     @BeforeEach
     void configurar() {
         aiService = mock(AIService.class);
+
+        AvaliacaoIAParser avaliacaoIAParser =
+                new AvaliacaoIAParser(objectMapper);
+
         gameEngine = spy(new GameEngine(
                 new SessionEngine(),
                 aiService,
-                objectMapper
+                avaliacaoIAParser
         ));
-        doReturn(TipoCliente.CALMO).when(gameEngine).sortearTipoCliente();
+
+        doReturn(TipoCliente.CALMO)
+                .when(gameEngine).sortearTipoCliente();
     }
 
     @Test
@@ -105,7 +113,8 @@ class GameEngineTest {
                 ))
         ));
 
-        when(aiService.avaliarResposta("Olá!", "Ana")).thenReturn(resposta);
+        when(aiService.avaliarResposta("Olá!", "Ana"))
+                .thenReturn(resposta);
     }
 
     private AvaliacaoDTO processarTurno() {

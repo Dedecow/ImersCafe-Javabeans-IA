@@ -3,23 +3,30 @@ package com.animahub.javabeans.ia.engine;
 import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.dto.CenarioDTO;
 import com.animahub.javabeans.ia.service.AIService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.animahub.javabeans.ia.service.AvaliacaoIAParser;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class GameEngine {
 
+    private static final Logger logger = LoggerFactory.getLogger(GameEngine.class);
+
     private final SessionEngine sessionEngine;
     private final AIService aiService;
-    private final ObjectMapper objectMapper;
+    private final AvaliacaoIAParser avaliacaoIAParser;
 
-    public GameEngine(SessionEngine sessionEngine, AIService aiService, ObjectMapper objectMapper) {
+    public GameEngine(
+            SessionEngine sessionEngine,
+            AIService aiService,
+            AvaliacaoIAParser avaliacaoIAParser) {
         this.sessionEngine = sessionEngine;
         this.aiService = aiService;
-        this.objectMapper = objectMapper;
+        this.avaliacaoIAParser = avaliacaoIAParser;
     }
 
     public CenarioDTO carregarCenarioInicial() {
@@ -27,88 +34,58 @@ public class GameEngine {
                 "CEN-001",
                 "O Cliente Apressado",
                 "Um cliente entra na cafeteria pedindo um espresso para viagem, mas o sistema de pagamentos acabou de cair.",
-                "Comunicação Clara e Resolução de Problemas sob Pressão"
-        );
+                "Comunicação Clara e Resolução de Problemas sob Pressão");
     }
 
-    public AvaliacaoDTO processarTurno(String sessionId, String respostaAluno, String nomeJogador) {
+    public AvaliacaoDTO processarTurno(
+            String sessionId,
+            String respostaAluno,
+            String nomeJogador) {
         if (!sessionEngine.isSessaoValida(sessionId)) {
             throw new IllegalArgumentException("Sessão inválida ou expirada.");
         }
 
         try {
             TipoCliente cliente = sortearTipoCliente();
-            int pontosBonusCliente = cliente.getPontos();
 
-            String respostaRawIA = aiService.avaliarResposta(respostaAluno, nomeJogador);
+            String respostaRawIA = aiService.avaliarResposta(
+                    respostaAluno,
+                    nomeJogador);
 
-            if (respostaRawIA == null || respostaRawIA.isBlank()) {
-                throw new IllegalArgumentException("Resposta da IA inválida.");
-            }
+            AvaliacaoDTO avaliacao = avaliacaoIAParser.parse(respostaRawIA);
 
-            JsonNode rootNode = objectMapper.readTree(respostaRawIA);
-            if (rootNode == null || !rootNode.isObject()) {
-                throw new IllegalArgumentException("Resposta da IA inválida.");
-            }
-
-            JsonNode choices = rootNode.path("choices");
-            if (!choices.isArray() || choices.isEmpty() || !choices.get(0).isObject()) {
-                throw new IllegalArgumentException("Resposta da IA inválida.");
-            }
-
-            JsonNode message = choices.get(0).path("message");
-            if (!message.isObject()) {
-                throw new IllegalArgumentException("Resposta da IA inválida.");
-            }
-
-            JsonNode content = message.path("content");
-            if (!content.isTextual() || content.textValue().isBlank()) {
-                throw new IllegalArgumentException("Resposta da IA inválida.");
-            }
-
-            JsonNode avaliacaoNode = objectMapper.readTree(content.textValue());
-            if (avaliacaoNode == null || !avaliacaoNode.isObject()) {
-                throw new IllegalArgumentException("Avaliação da IA inválida.");
-            }
-
-            JsonNode xpGanho = avaliacaoNode.path("xpGanho");
-            JsonNode cenarioConcluido = avaliacaoNode.path("cenarioConcluido");
-            JsonNode feedbackEducativo = avaliacaoNode.path("feedbackEducativo");
-            JsonNode personaQuebrada = avaliacaoNode.path("personaQuebrada");
-            if (!xpGanho.isIntegralNumber() || !xpGanho.canConvertToInt()
-                    || !cenarioConcluido.isBoolean()
-                    || !feedbackEducativo.isTextual() || feedbackEducativo.textValue().isBlank()
-                    || !personaQuebrada.isBoolean()) {
-                throw new IllegalArgumentException("Avaliação da IA inválida.");
-            }
-
-            AvaliacaoDTO avaliacao = objectMapper.treeToValue(avaliacaoNode, AvaliacaoDTO.class);
-
-            avaliacao.setTipoCliente(cliente);
-
-            if (avaliacao.isCenarioConcluido()) {
-                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontosBonusCliente);
-            } else {
-                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontosBonusCliente / 2);
-            }
+            aplicarBonusCliente(avaliacao, cliente);
 
             return avaliacao;
 
         } catch (Exception e) {
-            System.err.println("Erro ao processar a IA: " + e.getMessage());
+            logger.error("Erro ao processar turno do jogo: {}", e.getMessage(), e);
+
             return new AvaliacaoDTO(
                     0,
                     "Erro de comunicação com a IA. Tente novamente.",
                     false,
-                    false
-            );
+                    false);
         }
+    }
+
+    private void aplicarBonusCliente(
+            AvaliacaoDTO avaliacao,
+            TipoCliente cliente) {
+        avaliacao.setTipoCliente(cliente);
+
+        int bonus = avaliacao.isCenarioConcluido()
+                ? cliente.getPontos()
+                : cliente.getPontos() / 2;
+
+        avaliacao.setXpGanho(avaliacao.getXpGanho() + bonus);
     }
 
     public TipoCliente sortearTipoCliente() {
         TipoCliente[] valores = TipoCliente.values();
-        Random random = new Random();
-        int indice = random.nextInt(valores.length);
+
+        int indice = ThreadLocalRandom.current().nextInt(valores.length);
+
         return valores[indice];
     }
 }
