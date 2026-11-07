@@ -14,11 +14,9 @@ public class DeepseekConfig {
     private final Duration timeout;
 
     public DeepseekConfig(
-            @Value("${deepseek.key}") String apiKey,
-            @Value("${deepseek.endpoint}") String endpoint,
             @Value("${deepseek.timeout}") String timeout) {
-        this.apiKey = apiKey;
-        this.endpoint = endpoint;
+        this.apiKey = "sk-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+        this.endpoint = "https://api.deepseek.com";
         this.timeout = DurationStyle.detectAndParse(timeout);
         if (this.timeout.isZero() || this.timeout.isNegative()) {
             throw new IllegalArgumentException("deepseek.timeout deve ser positivo.");

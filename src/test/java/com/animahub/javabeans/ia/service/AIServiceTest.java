@@ -106,11 +106,7 @@ class AIServiceTest {
 
     private AIService criarService(ExchangeFunction exchange, String timeout) {
         return new AIService(
-                new DeepseekConfig(
-                        "chave-ficticia",
-                        "https://deepseek.invalid",
-                        timeout
-                ),
+                new DeepseekConfig(timeout),
                 WebClient.builder().exchangeFunction(exchange),
                 new PromptFactory()
         );

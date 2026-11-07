@@ -7,6 +7,7 @@ import com.animahub.javabeans.ia.engine.SessionEngine;
 import com.animahub.javabeans.ia.model.Sessao;
 import com.animahub.javabeans.ia.repository.SessaoRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.Optional;
 
 @Service
@@ -16,46 +17,35 @@ public class SessionService {
     private final SessionEngine sessionEngine;
     private final GameEngine gameEngine;
 
-    // Constructor injection (Spring faz automaticamente)
-    public SessionService(SessaoRepository sessaoRepository,
-                          SessionEngine sessionEngine,
-                          GameEngine gameEngine) {
+    public SessionService(
+            SessaoRepository sessaoRepository,
+            SessionEngine sessionEngine,
+            GameEngine gameEngine
+    ) {
         this.sessaoRepository = sessaoRepository;
         this.sessionEngine = sessionEngine;
         this.gameEngine = gameEngine;
     }
 
-    /**
-     * Fluxo do PPT: Iniciar sessão → salvar no banco → retornar sessionId + cenário
-     */
     public SessaoInicioDTO iniciarNovaSessao() {
         String sessionId = sessionEngine.iniciarNovaSessao();
 
-        // Cria e salva sessão zerada no H2
         Sessao novaSessao = new Sessao(sessionId, 0);
         sessaoRepository.save(novaSessao);
 
-        // Carrega o cenário inicial (CEN-001)
         CenarioDTO cenario = gameEngine.carregarCenarioInicial();
 
         return new SessaoInicioDTO(sessionId, cenario);
     }
 
-    /**
-     * Atualiza o XP total da sessão após a IA avaliar a jogada
-     */
     public void atualizarProgresso(String sessionId, int xpGanho) {
-        Optional<Sessao> optSessao = sessaoRepository.findBySessionId(sessionId);
-        if (optSessao.isPresent()) {
-            Sessao sessao = optSessao.get();
-            sessao.setXpTotal(sessao.getXpTotal() + xpGanho);
-            sessaoRepository.save(sessao);
-        }
+        sessaoRepository.findBySessionId(sessionId)
+                .ifPresent(sessao -> {
+                    sessao.setXpTotal(sessao.getXpTotal() + xpGanho);
+                    sessaoRepository.save(sessao);
+                });
     }
 
-    /**
-     * Busca sessão por ID (útil para validações futuras)
-     */
     public Optional<Sessao> buscarSessao(String sessionId) {
         return sessaoRepository.findBySessionId(sessionId);
     }
