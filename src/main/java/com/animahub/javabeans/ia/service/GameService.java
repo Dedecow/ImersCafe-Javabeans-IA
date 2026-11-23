@@ -19,11 +19,12 @@ import java.util.regex.Pattern;
 @Service
 public class GameService {
 
+    private static final Pattern NOME_PATTERN = Pattern.compile(
+            "(?i)(?:meu nome é|meu nome e|eu sou o|eu sou a|chamo-me|me chamo|pode me chamar de|chame-me de|chame de)\\s+([A-ZÁ-ÚÀ-Õ][a-zá-úà-õ]+)"
+    );
+
     // A HttpSession guarda só o identificador da sessão; o estado do jogo fica no banco
     private static final String ATRIBUTO_SESSAO_BANCO = "sessionIdBanco";
-
-    static final String FEEDBACK_IA_INDISPONIVEL =
-            "O cliente recebeu o pedido. (O comentário do cliente está indisponível no momento.)";
 
     private final AIService aiService;
     private final GameEngine gameEngine;
@@ -56,30 +57,32 @@ public class GameService {
         });
     }
 
-    public AvaliacaoDTO processarResposta(HttpSession session, String respostaAluno) {
-        extrairEPersistirNomeUsuario(respostaAluno, session);
+    public AvaliacaoDTO processarResposta(HttpSession session, String respostaJogador) {
+        extrairEPersistirNomeUsuario(respostaJogador, session);
 
         Sessao sessao = obterOuCriarSessao(session);
         String nomeJogador = (String) session.getAttribute("nomeJogador");
 
-        AvaliacaoDTO avaliacao = gameEngine.processarTurno(session.getId(), respostaAluno, nomeJogador);
+        AvaliacaoDTO avaliacao = gameEngine.processarTurno(
+                session.getId(),
+                respostaJogador,
+                nomeJogador
+        );
 
-        sessionService.registrarAvaliacao(sessao, respostaAluno, avaliacao, nomeJogador);
+        sessionService.registrarAvaliacao(sessao, respostaJogador, avaliacao, nomeJogador);
 
         return avaliacao;
     }
 
     private void extrairEPersistirNomeUsuario(String textoUsuario, HttpSession session) {
-        if (session.getAttribute("nomeJogador") == null && textoUsuario != null) {
-            Pattern pattern = Pattern.compile(
-                    "(?i)(?:meu nome é|meu nome e|eu sou o|eu sou a|chamo-me|me chamo|pode me chamar de|chame-me de|chame de)\\s+([A-ZÁ-ÚÀ-Õ][a-zá-úà-õ]+)"
-            );
-            Matcher matcher = pattern.matcher(textoUsuario.trim());
+        if (session.getAttribute("nomeJogador") != null || textoUsuario == null) {
+            return;
+        }
 
-            if (matcher.find()) {
-                String nomeExtraido = matcher.group(1);
-                session.setAttribute("nomeJogador", nomeExtraido);
-            }
+        Matcher matcher = NOME_PATTERN.matcher(textoUsuario.trim());
+
+        if (matcher.find()) {
+            session.setAttribute("nomeJogador", matcher.group(1));
         }
     }
 
@@ -90,30 +93,24 @@ public class GameService {
         return receita.paraReceita();
     }
 
-    public ResultadoPreparar prepararCafe(HttpSession session, List<String> ingredientesEscolhidosStr, String falaBarista) {
+    public ResultadoPreparar prepararCafe(
+            HttpSession session,
+            List<String> ingredientesEscolhidosStr,
+            String falaBarista
+    ) {
         Sessao sessao = obterOuCriarSessao(session);
         ReceitaEntity receitaEsperada = sessao.getReceitaAtual();
 
-        List<Ingrediente> escolhidos;
-        try {
-            escolhidos = ingredientesEscolhidosStr.stream()
-                    .map(String::trim)
-                    .map(String::toUpperCase)
-                    .map(Ingrediente::valueOf)
-                    .toList();
-        } catch (IllegalArgumentException e) {
-            escolhidos = Collections.emptyList();
-        }
+        List<Ingrediente> escolhidos = converterIngredientes(ingredientesEscolhidosStr);
 
-        boolean acertou = escolhidos.containsAll(receitaEsperada.getIngredientes())
-                && receitaEsperada.getIngredientes().containsAll(escolhidos);
+        boolean acertou = validarReceita(receitaEsperada, escolhidos);
 
         int pontos = acertou ? receitaEsperada.getPontosBase() : 0;
 
         String nomeJogador = (String) session.getAttribute("nomeJogador");
 
-        // Repassamos a fala do barista para o motor da IA. Se a IA falhar, a rodada (já avaliada
-        // pelo backend) é gravada mesmo assim, com um comentário neutro no lugar do texto da IA.
+        // A IA só gera o comentário do cliente. Se ela falhar, a rodada (já avaliada pelo backend)
+        // é gravada mesmo assim, com o texto de indisponibilidade.
         String feedbackIA;
         try {
             feedbackIA = aiService.gerarFeedbackBarista(
@@ -123,13 +120,35 @@ public class GameService {
                     falaBarista
             );
         } catch (RuntimeException e) {
-            feedbackIA = FEEDBACK_IA_INDISPONIVEL;
+            feedbackIA = AIService.FEEDBACK_INDISPONIVEL;
         }
 
         Sessao atualizada = sessionService.registrarRodada(
                 sessao, receitaEsperada, escolhidos, acertou, pontos, falaBarista, feedbackIA);
 
-        return new ResultadoPreparar(acertou, pontos, atualizada.getXpTotal(), feedbackIA,
-                atualizada.getReceitaAtual().paraReceita());
+        return new ResultadoPreparar(
+                acertou,
+                pontos,
+                atualizada.getXpTotal(),
+                feedbackIA,
+                atualizada.getReceitaAtual().paraReceita()
+        );
+    }
+
+    private List<Ingrediente> converterIngredientes(List<String> ingredientesEscolhidosStr) {
+        try {
+            return ingredientesEscolhidosStr.stream()
+                    .map(String::trim)
+                    .map(String::toUpperCase)
+                    .map(Ingrediente::valueOf)
+                    .toList();
+        } catch (IllegalArgumentException e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private boolean validarReceita(ReceitaEntity receitaEsperada, List<Ingrediente> escolhidos) {
+        return escolhidos.containsAll(receitaEsperada.getIngredientes())
+                && receitaEsperada.getIngredientes().containsAll(escolhidos);
     }
 }

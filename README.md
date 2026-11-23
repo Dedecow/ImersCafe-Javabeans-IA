@@ -29,7 +29,7 @@ O perfil é escolhido pela variável `SPRING_PROFILES_ACTIVE`. Sem ela, o perfil
 | `DB_PASSWORD` | sim, no perfil `postgres` | — | senha do PostgreSQL |
 | `DEEPSEEK_API_KEY` | sim, para a IA responder | vazio | chave da API DeepSeek |
 | `DEEPSEEK_ENDPOINT` | não | `https://api.deepseek.com` | URL da API DeepSeek |
-| `DEEPSEEK_TIMEOUT_SEGUNDOS` | não | `15` | tempo máximo de espera pela IA |
+| `DEEPSEEK_TIMEOUT` | não | `15s` | tempo máximo de espera pela IA (ex.: `15s`, `500ms`) |
 | `DB_POOL_MAX` | não | `10` | máximo de conexões simultâneas com o banco |
 
 Nenhuma senha ou chave fica em arquivo do repositório. Para configurações pessoais, use `application-local.yml` (ignorado pelo Git).
@@ -81,7 +81,7 @@ Gravações na mesma partida travam a linha da `sessao` (`SELECT ... FOR UPDATE`
 
 ## Desempenho e monitoramento
 
-- **IA:** cada chamada tem timeout (`DEEPSEEK_TIMEOUT_SEGUNDOS`) e limite de tamanho da resposta (`max_tokens`). Se a IA falhar ou demorar demais, o jogo continua: o `/preparar-cafe` grava a rodada com um comentário neutro e o `/responder` grava uma avaliação com XP 0.
+- **IA:** cada chamada tem timeout (`DEEPSEEK_TIMEOUT`) e limite de tamanho da resposta (`max_tokens`). Se a IA falhar ou demorar demais, o jogo continua: o `/preparar-cafe` grava a rodada com um comentário neutro e o `/responder` grava uma avaliação com XP 0.
 - **Banco:** `open-in-view` desligado, para que nenhuma requisição segure uma conexão do banco enquanto espera a IA.
 - **Logs:** gravados em `logs/javabeans-ia.log` (rotação a cada 10 MB, 7 arquivos). Cada requisição é registrada com método, rota, status e duração, e recebe um ID curto que aparece em todas as linhas de log dela. Requisições acima de 5 s geram `WARN`; erros 5xx geram `ERROR` com a pilha.
 - **Actuator:**

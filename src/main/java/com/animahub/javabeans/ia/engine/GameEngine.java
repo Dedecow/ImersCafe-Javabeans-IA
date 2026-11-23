@@ -3,8 +3,8 @@ package com.animahub.javabeans.ia.engine;
 import com.animahub.javabeans.ia.dto.AvaliacaoDTO;
 import com.animahub.javabeans.ia.dto.CenarioDTO;
 import com.animahub.javabeans.ia.service.AIService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.animahub.javabeans.ia.service.AvaliacaoIAParser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,16 +14,19 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 public class GameEngine {
 
-    private static final Logger log = LoggerFactory.getLogger(GameEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(GameEngine.class);
 
     private final SessionEngine sessionEngine;
     private final AIService aiService;
-    private final ObjectMapper objectMapper;
+    private final AvaliacaoIAParser avaliacaoIAParser;
 
-    public GameEngine(SessionEngine sessionEngine, AIService aiService, ObjectMapper objectMapper) {
+    public GameEngine(
+            SessionEngine sessionEngine,
+            AIService aiService,
+            AvaliacaoIAParser avaliacaoIAParser) {
         this.sessionEngine = sessionEngine;
         this.aiService = aiService;
-        this.objectMapper = objectMapper;
+        this.avaliacaoIAParser = avaliacaoIAParser;
     }
 
     public CenarioDTO carregarCenarioInicial() {
@@ -31,49 +34,59 @@ public class GameEngine {
                 "CEN-001",
                 "O Cliente Apressado",
                 "Um cliente entra na cafeteria pedindo um espresso para viagem, mas o sistema de pagamentos acabou de cair.",
-                "Comunicação Clara e Resolução de Problemas sob Pressão"
-        );
+                "Comunicação Clara e Resolução de Problemas sob Pressão");
     }
 
-    public AvaliacaoDTO processarTurno(String sessionId, String respostaAluno, String nomeJogador) {
+    public AvaliacaoDTO processarTurno(
+            String sessionId,
+            String respostaAluno,
+            String nomeJogador) {
         if (!sessionEngine.isSessaoValida(sessionId)) {
             throw new IllegalArgumentException("Sessão inválida ou expirada.");
         }
 
         try {
             TipoCliente cliente = sortearTipoCliente();
-            int pontosBonusCliente = cliente.getPontos();
 
-            String respostaRawIA = aiService.avaliarResposta(respostaAluno, nomeJogador);
+            String respostaRawIA = aiService.avaliarResposta(
+                    respostaAluno,
+                    nomeJogador);
 
-            JsonNode rootNode = objectMapper.readTree(respostaRawIA);
-            String conteudoIA = rootNode.path("choices").get(0).path("message").path("content").asText();
+            AvaliacaoDTO avaliacao = avaliacaoIAParser.parse(respostaRawIA);
 
-            AvaliacaoDTO avaliacao = objectMapper.readValue(conteudoIA, AvaliacaoDTO.class);
-
-            avaliacao.setTipoCliente(cliente);
-
-            if (avaliacao.isCenarioConcluido()) {
-                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontosBonusCliente);
-            } else {
-                avaliacao.setXpGanho(avaliacao.getXpGanho() + pontosBonusCliente / 2);
-            }
+            aplicarBonusCliente(avaliacao, cliente);
 
             return avaliacao;
 
         } catch (Exception e) {
-            log.warn("Avaliação da IA indisponível, usando avaliação de erro: {}", e.getMessage());
+            // Falha da IA já tratada com avaliação de erro: WARN, para não poluir o monitoramento de erros reais
+            logger.warn("Avaliação da IA indisponível, usando avaliação de erro: {}", e.getMessage());
+
             return new AvaliacaoDTO(
                     0,
                     "Erro de comunicação com a IA. Tente novamente.",
                     false,
-                    false
-            );
+                    false);
         }
+    }
+
+    private void aplicarBonusCliente(
+            AvaliacaoDTO avaliacao,
+            TipoCliente cliente) {
+        avaliacao.setTipoCliente(cliente);
+
+        int bonus = avaliacao.isCenarioConcluido()
+                ? cliente.getPontos()
+                : cliente.getPontos() / 2;
+
+        avaliacao.setXpGanho(avaliacao.getXpGanho() + bonus);
     }
 
     public TipoCliente sortearTipoCliente() {
         TipoCliente[] valores = TipoCliente.values();
-        return valores[ThreadLocalRandom.current().nextInt(valores.length)];
+
+        int indice = ThreadLocalRandom.current().nextInt(valores.length);
+
+        return valores[indice];
     }
 }

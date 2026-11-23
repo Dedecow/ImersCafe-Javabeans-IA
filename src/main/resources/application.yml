@@ -1,8 +1,8 @@
 deepseek:
   endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com}
   key: ${DEEPSEEK_API_KEY:}
-  # Tempo máximo de espera pela IA; depois disso o jogo segue sem o texto da IA
-  timeout-segundos: ${DEEPSEEK_TIMEOUT_SEGUNDOS:15}
+  # Tempo máximo de espera pela IA (ex.: 15s, 500ms); depois disso o jogo segue sem o texto da IA
+  timeout: ${DEEPSEEK_TIMEOUT:15s}
 
 spring:
   profiles:
