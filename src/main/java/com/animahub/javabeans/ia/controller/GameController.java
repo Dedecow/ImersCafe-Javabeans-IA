@@ -33,15 +33,29 @@ public class GameController {
     public ResponseEntity<Void> iniciarSessao(@RequestBody Map<String, String> payload, HttpSession session) {
         String nomeBarista = payload.get("nomeBarista");
         if (nomeBarista != null && !nomeBarista.trim().isEmpty()) {
-            session.setAttribute("nomeJogador", nomeBarista.trim());
+            nomeBarista = nomeBarista.trim();
+            session.setAttribute("nomeJogador", nomeBarista);
+        } else {
+            nomeBarista = null;
         }
+        gameService.iniciarSessao(session, nomeBarista);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/health")
     public ResponseEntity<DiagnosticoDTO> health() {
+        boolean bancoPronto = true;
+        long totalSessoes = 0;
+        long xpDistribuido = 0;
+        try {
+            totalSessoes = sessionService.contarSessoes();
+            xpDistribuido = sessionService.somarXpDistribuido();
+        } catch (Exception e) {
+            bancoPronto = false;
+        }
         return ResponseEntity.ok(new DiagnosticoDTO(
-                "HEALTHY", "1.0-MVP", true, "Tudo ok!", false, 0, 0,
+                bancoPronto ? "HEALTHY" : "DEGRADED", "1.0-MVP", true, "Tudo ok!", bancoPronto,
+                (int) totalSessoes, (int) xpDistribuido,
                 "1.0-MVP", "development", LocalDateTime.now().toString()
         ));
     }
@@ -67,8 +81,14 @@ public class GameController {
     public ResponseEntity<Map<String, Object>> debugSessao(HttpSession session) {
         Map<String, Object> map = new HashMap<>();
         map.put("sessionId", session.getId());
-        map.put("cenarioAtual", session.getAttribute("cenarioAtual"));
-        map.put("pontuacaoTotal", session.getAttribute("pontuacaoTotal"));
+        gameService.buscarSessaoAtual(session).ifPresent(sessao -> {
+            map.put("sessionIdBanco", sessao.getSessionId());
+            map.put("nomeBarista", sessao.getNomeBarista());
+            map.put("cenarioAtual", sessao.getReceitaAtual().getOrdem());
+            map.put("pontuacaoTotal", sessao.getXpTotal());
+            map.put("rodadas", sessionService.contarRodadas(sessao));
+            map.put("avaliacoes", sessionService.contarAvaliacoes(sessao));
+        });
         return ResponseEntity.ok(map);
     }
 

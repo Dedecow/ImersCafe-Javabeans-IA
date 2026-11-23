@@ -50,8 +50,8 @@ bin/
 ### Spring Boot ###
 !/target/*.jar
 !/target/*.war
-application-*.properties
-application-*.yml
+# Perfis (application-dev.yml, application-postgres.yml) são versionados: não contêm segredos.
+# Configurações pessoais ficam em application-local.yml (ignorado abaixo).
 *.db
 spring-boot-override-*.properties
 spring-boot-override-*.yml
@@ -84,6 +84,3 @@ config.ps1
 
 ### Meus Arquivos Temporarios ###
 cookies.txt
-
-### Exclusoes Especificas de Codigo Fonte ###
-**/DeepseekConfig.java

@@ -5,12 +5,16 @@ import com.animahub.javabeans.ia.dto.CenarioDTO;
 import com.animahub.javabeans.ia.service.AIService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class GameEngine {
+
+    private static final Logger log = LoggerFactory.getLogger(GameEngine.class);
 
     private final SessionEngine sessionEngine;
     private final AIService aiService;
@@ -58,7 +62,7 @@ public class GameEngine {
             return avaliacao;
 
         } catch (Exception e) {
-            System.err.println("Erro ao processar a IA: " + e.getMessage());
+            log.warn("Avaliação da IA indisponível, usando avaliação de erro: {}", e.getMessage());
             return new AvaliacaoDTO(
                     0,
                     "Erro de comunicação com a IA. Tente novamente.",
@@ -70,8 +74,6 @@ public class GameEngine {
 
     public TipoCliente sortearTipoCliente() {
         TipoCliente[] valores = TipoCliente.values();
-        Random random = new Random();
-        int indice = random.nextInt(valores.length);
-        return valores[indice];
+        return valores[ThreadLocalRandom.current().nextInt(valores.length)];
     }
 }

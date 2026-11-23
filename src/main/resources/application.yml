@@ -1,19 +1,38 @@
 deepseek:
-  endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com/v1}
-  key: ${}
+  endpoint: ${DEEPSEEK_ENDPOINT:https://api.deepseek.com}
+  key: ${DEEPSEEK_API_KEY:}
+  # Tempo máximo de espera pela IA; depois disso o jogo segue sem o texto da IA
+  timeout-segundos: ${DEEPSEEK_TIMEOUT_SEGUNDOS:15}
 
 spring:
-  datasource:
-    url: jdbc:h2:mem:javabeansdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    # Não segura conexão com o banco durante a requisição inteira (inclusive a espera pela IA)
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: 2
+      # Falha rápido (5 s) em vez de deixar o jogador esperando 30 s por uma conexão
+      connection-timeout: 5000
+
+logging:
+  file:
+    name: logs/javabeans-ia.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+  pattern:
+    # ID da requisição em cada linha do log
+    level: "%5p [%X{requisicao:-sistema}]"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  endpoint:
+    health:
+      show-details: always
